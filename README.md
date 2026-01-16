@@ -98,6 +98,34 @@ Or use the Claude Code deployment skill:
 
 Your API will be deployed to: `https://api.<your-subdomain>.workers.dev`
 
+### Monitoring and Logs
+
+The API has observability logging enabled, which captures all console output and request details.
+
+**View logs in Cloudflare Dashboard:**
+
+Navigate to:
+```
+https://dash.cloudflare.com/{YOUR_ACCOUNT_ID}/workers/services/view/api/production/observability/logs?workers-observability-view=events
+```
+
+Replace `{YOUR_ACCOUNT_ID}` with your Cloudflare Account ID from the `.env` file.
+
+**Or view logs from the command line:**
+
+```bash
+cd apps/api
+wrangler tail
+```
+
+This will stream real-time logs including:
+- Console output (`console.log`, `console.error`, etc.)
+- Request/response details
+- Errors and exceptions
+- Timestamps
+
+**Quick access:** After deployment, you can also find the logs by going to your Cloudflare Dashboard > Workers & Pages > api > Logs tab.
+
 ### Local Development
 
 To run the API locally:

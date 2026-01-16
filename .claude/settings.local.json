@@ -11,7 +11,10 @@
       "Bash(chmod:*)",
       "Bash(/Users/askontra/dev-test/ai-driven-project-template/.claude/skills/deployment/scripts/deploy.sh:*)",
       "Bash(/Users/askontra/dev-test/ai-driven-project-template/.claude/skills/dependencies/scripts/install.sh)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(.claude/skills/dependencies/scripts/install.sh)",
+      "Skill(deployment)",
+      "Bash(.claude/skills/deployment/scripts/deploy.sh)"
     ],
     "deny": [],
     "ask": []
