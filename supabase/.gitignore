@@ -1,0 +1,11 @@
+# Supabase local development
+.temp
+.branches
+.env
+.env.local
+
+# Generated types
+types/
+
+# Function secrets
+functions/.env

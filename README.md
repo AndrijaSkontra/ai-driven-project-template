@@ -32,8 +32,10 @@ The planning template helps you:
 
 Before you begin, ensure you have the following installed:
 
-- **[Bun](https://bun.sh)** - JavaScript runtime and package manager
-- **[Cloudflare Account](https://dash.cloudflare.com/sign-up)** - For deploying to Cloudflare Workers
+- **[Bun](https://bun.sh)** - JavaScript runtime and package manager (required)
+- **[Cloudflare Account](https://dash.cloudflare.com/sign-up)** - For deploying to Cloudflare Workers (required)
+- **[Supabase Account](https://supabase.com)** - For database and edge functions (optional)
+- **[Supabase CLI](https://supabase.com/docs/guides/cli)** - Required for deploying Edge Functions (optional, see installation instructions below)
 
 ### Cloudflare Setup
 
@@ -72,7 +74,93 @@ CLOUDFLARE_ACCOUNT_ID=your_account_id_here
 
 **Important:** Never commit the `.env` file to version control. It's already included in `.gitignore`.
 
-#### 5. Install Dependencies
+### Supabase Setup (Optional)
+
+If you want to use Supabase for database and edge functions:
+
+#### 1. Create a Supabase Project
+
+1. Sign up or log in at [https://supabase.com](https://supabase.com)
+2. Create a new project
+3. Wait for the project to finish setting up
+
+#### 2. Get Your Supabase Credentials
+
+1. Go to your [Supabase Dashboard](https://supabase.com/dashboard)
+2. Select your project
+3. Navigate to **Settings** > **API**
+4. Copy the following:
+   - **Project URL** (e.g., `https://abcdefg.supabase.co`)
+   - **Project Reference** (the short ID, e.g., `abcdefg`)
+   - **anon public** key (safe for client-side use)
+   - **service_role** key (server-only, keep secure!)
+
+#### 3. Add to Environment Variables
+
+Add the following to your `.env` file:
+
+```bash
+# Supabase Configuration
+SUPABASE_URL=your_project_url_here
+SUPABASE_PROJECT_REF=your_project_ref_here
+SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+```
+
+**Security Note:** The service role key bypasses Row Level Security (RLS). Never expose it in client-side code.
+
+#### 4. Install Supabase CLI (Required for Edge Functions Deployment)
+
+**⚠️ Important:** The Supabase CLI is **required** if you want to deploy Supabase Edge Functions. Without it, you can still use Supabase database in your Cloudflare Workers API, but you won't be able to deploy the serverless functions.
+
+**Installation Options:**
+
+**macOS (Homebrew - Recommended):**
+```bash
+brew install supabase/tap/supabase
+```
+
+**Windows (Scoop):**
+```bash
+scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+scoop install supabase
+```
+
+**Cross-platform (npm/npx):**
+```bash
+# Install globally
+npm install -g supabase
+
+# Or use via npx (no installation required)
+npx supabase [command]
+```
+
+**Linux:**
+```bash
+# Download the latest release
+curl -L https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz -o supabase.tar.gz
+
+# Extract and install
+tar -xzf supabase.tar.gz
+sudo mv supabase /usr/local/bin/supabase
+```
+
+**Verify Installation:**
+```bash
+supabase --version
+```
+
+#### 5. Authenticate with Supabase CLI
+
+After installing the CLI, authenticate with your Supabase account:
+
+```bash
+supabase login
+```
+
+This will open a browser for authentication. Complete the login process to link your CLI with your Supabase account.
+
+#### 6. Install Dependencies
 
 ```bash
 cd apps/api
@@ -84,19 +172,92 @@ Or use the Claude Code dependencies skill:
 /dependencies
 ```
 
-#### 6. Deploy to Cloudflare
+#### 7. Verify Environment Configuration (Recommended)
 
+Before deploying, verify that all environment variables are correctly configured:
+
+```bash
+/check-envs
+```
+
+This will check your `.env` file and report:
+- ✅ Which variables are properly configured
+- ⚠️  Which variables have placeholder values that need updating
+- ❌ Which required variables are missing
+
+**Example output:**
+```
+╔═══════════════════════════════════════════╗
+║   Environment Variables Check             ║
+╚═══════════════════════════════════════════╝
+
+Cloudflare Workers (Required)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ CLOUDFLARE_API: Set
+✅ CLOUDFLARE_ACCOUNT_ID: Set
+
+Supabase (Optional)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ SUPABASE_URL: Set
+✅ SUPABASE_ANON_KEY: Set
+✅ SUPABASE_SERVICE_ROLE_KEY: Set
+✅ SUPABASE_PROJECT_REF: Set
+
+Summary
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Required variables: 2/2 configured
+ℹ️  Optional variables: 4/4 configured
+
+✅ Environment configuration is valid for deployment!
+```
+
+#### 8. Deploy Your Applications
+
+##### Deploy to Cloudflare Workers
+
+**Manual deployment:**
 ```bash
 cd apps/api
 bun run deploy
 ```
 
-Or use the Claude Code deployment skill:
+**Using Claude Code deployment skill:**
 ```bash
 /deployment
 ```
+Then select "Cloudflare Workers" from the menu.
 
 Your API will be deployed to: `https://api.<your-subdomain>.workers.dev`
+
+##### Deploy to Supabase Edge Functions (If Configured)
+
+**⚠️ Prerequisites:**
+- Supabase CLI must be installed (see step 4 above)
+- You must be authenticated (`supabase login`)
+- Environment variables must be configured in `.env`
+
+**Manual deployment:**
+```bash
+supabase functions deploy
+```
+
+**Using Claude Code deployment skill:**
+```bash
+/deployment
+```
+Then select "Supabase Edge Functions" from the menu.
+
+**Note:** If Supabase CLI is not installed, the deployment will skip Supabase and only deploy to Cloudflare Workers.
+
+Your functions will be available at: `https://<your-ref>.supabase.co/functions/v1/`
+
+##### Deploy to Both Platforms
+
+The deployment skill supports deploying to both platforms simultaneously:
+```bash
+/deployment
+```
+Then select "Both platforms" from the menu.
 
 ### Monitoring and Logs
 
@@ -202,10 +363,14 @@ The `claude.md` file contains comprehensive project context for AI coding agents
 
 ### Current Features
 
-- **Cloudflare Workers Deployment** - Production-ready API deployment to Cloudflare's edge network
+- **Multi-Platform Deployment** - Deploy to Cloudflare Workers and/or Supabase Edge Functions
+- **Unified Deployment Skill** - One command to deploy to multiple platforms
+- **Supabase Integration** - Database client for Cloudflare Workers API
+- **Supabase Edge Functions** - Serverless functions running on Deno
+- **Cloudflare Workers** - Production-ready API deployment to Cloudflare's edge network
 - **Hono Framework** - Lightweight, ultrafast web framework designed for edge computing
 - **Bun Runtime** - Fast JavaScript runtime and package manager
-- **Claude Code Skills** - Custom skills for deployment and dependency management
+- **Claude Code Skills** - Custom skills for deployment, dependency management, and environment validation
 - **MCP Integration** - Pre-configured Supabase and Playwright MCP servers
 - **Cross-Platform Scripts** - Support for Unix/Mac/Linux and Windows
 - **Environment Configuration** - Secure credential management with `.env`
@@ -220,22 +385,31 @@ Manage project dependencies across all apps.
 - Verifies installation success
 - Cross-platform support
 
+#### `/check-envs`
+Validate environment variables configuration.
+- Checks all required and optional environment variables
+- Detects placeholder values that need to be replaced
+- Provides color-coded status report
+- Shows setup instructions for missing variables
+- Cross-platform support (Unix/Mac/Windows)
+
 #### `/deployment`
-Deploy the API to Cloudflare Workers with one command.
-- Validates environment variables
-- Deploys with minification
-- Returns deployment URL and version
-- Cross-platform support
+Unified deployment to Cloudflare Workers and/or Supabase Edge Functions.
+- Interactive platform selection (Cloudflare / Supabase / Both)
+- Validates platform-specific environment variables
+- Deploys to selected platform(s)
+- Returns deployment URLs and status
+- Cross-platform support (Unix/Mac/Windows)
 
 ### Coming Soon
 
-- Authentication with Supabase
-- Database integration
-- Additional API endpoints
+- Authentication with Supabase Auth
+- More API endpoints and database queries
 - Testing framework setup
 - CI/CD pipeline
-- Multi-environment deployments
+- Multi-environment deployments (dev/staging/prod)
 - More Claude Code skills
+- Rollback functionality in deployment skill
 
 ## Contributing
 

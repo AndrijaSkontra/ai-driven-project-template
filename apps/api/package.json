@@ -3,10 +3,11 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "export $(cat ../../.env | xargs) && export CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API && wrangler deploy --minify",
+    "deploy": "export $(cat ../../.env | grep -v '^#' | grep -v '^$' | xargs) && export CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API && wrangler deploy --minify --var SUPABASE_URL:$SUPABASE_URL --var SUPABASE_ANON_KEY:$SUPABASE_ANON_KEY --var SUPABASE_SERVICE_ROLE_KEY:$SUPABASE_SERVICE_ROLE_KEY",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.90.1",
     "hono": "^4.11.4",
     "picocolors": "^1.1.1"
   },
