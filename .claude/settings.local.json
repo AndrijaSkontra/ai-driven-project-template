@@ -9,7 +9,9 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(chmod:*)",
-      "Bash(/Users/askontra/dev-test/ai-driven-project-template/.claude/skills/deployment/scripts/deploy.sh:*)"
+      "Bash(/Users/askontra/dev-test/ai-driven-project-template/.claude/skills/deployment/scripts/deploy.sh:*)",
+      "Bash(/Users/askontra/dev-test/ai-driven-project-template/.claude/skills/dependencies/scripts/install.sh)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
