@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(bun install:*)",
-      "Bash(bun run deploy:*)"
+      "Bash(bun run deploy:*)",
+      "WebFetch(domain:platform.claude.com)",
+      "WebSearch",
+      "WebFetch(domain:code.claude.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(chmod:*)",
+      "Bash(/Users/askontra/dev-test/ai-driven-project-template/.claude/skills/deployment/scripts/deploy.sh:*)"
     ],
     "deny": [],
     "ask": []
