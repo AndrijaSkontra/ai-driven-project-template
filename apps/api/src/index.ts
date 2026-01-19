@@ -6,7 +6,7 @@ const app = new Hono<{ Bindings: Env }>();
 
 app.get('/', (c) => {
   console.log(pc.green(`Starting the ${pc.italic(`server`)}`));
-  return c.text('AI start in feature testing!');
+  return c.text('AI start in feature testing! New feature');
 });
 
 app.get('/db-test', async (c) => {
