@@ -1,1 +1,20 @@
+# Environment files
 .env
+.env.*
+
+# Dependencies (root level)
+/node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/settings.json
+
+# Build artifacts
+.wrangler/
+
+# Logs
+*.log

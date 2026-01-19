@@ -15,6 +15,7 @@ This skill handles dependency management for the project using Bun.
 ## Pre-check
 
 Before managing dependencies, verify:
+
 1. Bun is installed and accessible on the system
 2. Package.json files exist in the expected locations
 3. Internet connectivity for downloading packages
@@ -26,16 +27,19 @@ Before managing dependencies, verify:
 Currently installs dependencies for the API application located in `apps/api`.
 
 **For Unix/Mac/Linux:**
+
 ```bash
 .claude/skills/dependencies/scripts/install.sh
 ```
 
 **For Windows PowerShell:**
+
 ```powershell
 .claude/skills/dependencies/scripts/install.ps1
 ```
 
 The script will:
+
 1. Navigate to `apps/api` directory
 2. Verify bun is installed
 3. Run `bun install` to install all dependencies
@@ -44,6 +48,7 @@ The script will:
 ### Post-Installation
 
 After successful installation:
+
 - Verify node_modules directory was created
 - Check that all dependencies were installed correctly
 - Report any warnings or errors from bun
@@ -61,6 +66,7 @@ Handle these common errors:
 ## Future Enhancements
 
 This skill will be expanded to include:
+
 - Installing dependencies for multiple apps when added to the project
 - Updating dependencies (`bun update`)
 - Adding new dependencies (`bun add <package>`)

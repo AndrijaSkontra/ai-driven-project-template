@@ -6,9 +6,9 @@
   "observability": {
     "logs": {
       "enabled": true,
-      "invocation_logs": true
-    }
-  }
+      "invocation_logs": true,
+    },
+  },
   // Note: Supabase environment variables are loaded from .env during deployment
   // For local development, you can use wrangler.toml with [vars] section
   // or set them via: wrangler secret put SUPABASE_URL, etc.

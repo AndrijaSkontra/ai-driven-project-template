@@ -23,7 +23,9 @@ export interface Env {
  */
 export function createSupabaseClient(env: Env): SupabaseClient {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
-    throw new Error('Missing required Supabase environment variables: SUPABASE_URL and SUPABASE_ANON_KEY');
+    throw new Error(
+      'Missing required Supabase environment variables: SUPABASE_URL and SUPABASE_ANON_KEY'
+    );
   }
 
   return createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
@@ -42,7 +44,9 @@ export function createSupabaseClient(env: Env): SupabaseClient {
  */
 export function createSupabaseAdminClient(env: Env): SupabaseClient {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('Missing required Supabase environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+    throw new Error(
+      'Missing required Supabase environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY'
+    );
   }
 
   return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {

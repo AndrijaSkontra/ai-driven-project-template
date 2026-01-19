@@ -23,10 +23,12 @@ This skill validates the presence and configuration of environment variables req
 ## Environment Variables Checked
 
 ### Cloudflare Workers (Required)
+
 - `CLOUDFLARE_API` - API token for Cloudflare Workers deployment
 - `CLOUDFLARE_ACCOUNT_ID` - Cloudflare account identifier
 
 ### Supabase (Optional)
+
 - `SUPABASE_URL` - Supabase project URL
 - `SUPABASE_ANON_KEY` - Anonymous/public key for client-side use
 - `SUPABASE_SERVICE_ROLE_KEY` - Service role key for server-side use
@@ -35,6 +37,7 @@ This skill validates the presence and configuration of environment variables req
 ## Usage
 
 ### Via Claude Code Skill
+
 ```
 /check-envs
 ```
@@ -42,11 +45,13 @@ This skill validates the presence and configuration of environment variables req
 ### Manual Execution
 
 **Unix/Mac/Linux:**
+
 ```bash
 .claude/skills/check-envs/scripts/check-envs.sh
 ```
 
 **Windows PowerShell:**
+
 ```powershell
 .claude/skills/check-envs/scripts/check-envs.ps1
 ```
@@ -54,8 +59,9 @@ This skill validates the presence and configuration of environment variables req
 ## Output Format
 
 The skill provides color-coded output:
+
 - ✅ **Green** - Variable is set and configured
-- ⚠️  **Yellow** - Variable is set but has placeholder value
+- ⚠️ **Yellow** - Variable is set but has placeholder value
 - ❌ **Red** - Variable is missing or not set
 
 ## Example Output
@@ -86,6 +92,7 @@ Optional variables: 2/4 configured
 ## When to Use This Skill
 
 Use this skill when:
+
 - Setting up the project for the first time
 - Troubleshooting deployment issues
 - Verifying environment configuration before deployment
@@ -96,19 +103,25 @@ Use this skill when:
 ## Error Handling
 
 ### .env File Not Found
+
 If the `.env` file doesn't exist, the skill will:
+
 1. Report that no `.env` file was found
 2. Suggest creating one from `.env.example`
 3. Provide instructions on how to obtain credentials
 
 ### Missing Required Variables
+
 If required Cloudflare variables are missing:
+
 1. Display which variables are missing
 2. Provide links to obtain the credentials
 3. Exit with error status
 
 ### Placeholder Values Detected
+
 If variables contain placeholder values like:
+
 - `your-*-here`
 - `<your-*>`
 - `xxxxx`
@@ -120,11 +133,13 @@ The skill will warn that these need to be replaced with actual values.
 When variables are missing or have placeholders, the skill provides:
 
 ### For Cloudflare:
+
 - Link to Cloudflare Dashboard
 - Link to API token generation
 - Required permissions list
 
 ### For Supabase:
+
 - Link to Supabase Dashboard
 - Navigation path to API settings
 - Explanation of each key type and usage
@@ -132,12 +147,14 @@ When variables are missing or have placeholders, the skill provides:
 ## Integration with Other Skills
 
 This skill works well with:
+
 - `/dependencies` - Check environment before installing dependencies
 - `/deployment` - Validate configuration before deployment
 
 ## Future Enhancements
 
 Planned improvements:
+
 - Validate format of environment variables (URL format, token length, etc.)
 - Check for common configuration mistakes
 - Suggest fixes for detected issues

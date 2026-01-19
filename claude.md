@@ -5,6 +5,7 @@
 This is an AI-driven application development template designed to work seamlessly with AI coding agents like Claude Code and Cursor. The template provides a structured starting point for building applications with automated deployment, dependency management, and MCP (Model Context Protocol) integrations.
 
 **Technology Stack:**
+
 - **Runtime:** Bun (JavaScript runtime and package manager)
 - **Framework:** Hono v4 (Lightweight web framework)
 - **Deployment Platforms:**
@@ -20,6 +21,14 @@ This is an AI-driven application development template designed to work seamlessl
 ai-driven-project-template/
    .env                          # Environment variables (not committed)
    .mcp.json                     # MCP server configurations
+   package.json                  # Root package.json (Husky, lint-staged, commitlint, prettier)
+   commitlint.config.js          # Commit message validation rules
+   lint-staged.config.js         # Staged files linting configuration
+   .prettierrc                   # Code formatting rules
+   .prettierignore               # Files to exclude from formatting
+   .husky/                       # Git hooks directory
+       pre-commit               # Runs lint-staged on staged files
+       commit-msg               # Validates commit messages
    claude.md                     # This file - Project context for Claude Code
    plan.md                       # Feature planning template
    README.md                     # User-facing documentation
@@ -90,6 +99,7 @@ SUPABASE_PROJECT_REF=<your_supabase_project_ref>
      - **service_role** key (SUPABASE_SERVICE_ROLE_KEY) - Server-only, bypasses RLS
 
 **Security:**
+
 - The `.env` file is in `.gitignore` and should never be committed
 - `SUPABASE_SERVICE_ROLE_KEY` bypasses Row Level Security - NEVER expose publicly
 - `SUPABASE_ANON_KEY` is safe for client-side use as it respects RLS policies
@@ -101,12 +111,14 @@ This project uses Model Context Protocol (MCP) servers for enhanced AI capabilit
 ### Configured MCP Servers
 
 **1. Supabase MCP** (`supabase`)
+
 - **Type:** HTTP
 - **URL:** https://mcp.supabase.com/mcp
 - **Purpose:** Database and backend services integration
 - **Usage:** Enables Claude to interact with Supabase services
 
 **2. Playwright MCP** (`playwright`)
+
 - **Type:** stdio
 - **Command:** `npx @playwright/mcp@latest`
 - **Purpose:** Browser automation and testing
@@ -121,14 +133,17 @@ MCP servers are configured in `.mcp.json` at the project root. This file is chec
 ## Available Skills
 
 ### /dependencies
+
 **Purpose:** Manage project dependencies
 
 **Usage:**
+
 - "Install dependencies"
 - "Set up project packages"
 - `/dependencies`
 
 **What it does:**
+
 - Navigates to `apps/api`
 - Runs `bun install`
 - Verifies installation success
@@ -137,15 +152,18 @@ MCP servers are configured in `.mcp.json` at the project root. This file is chec
 **Future:** Will support multiple apps, updates, audits, and adding/removing packages
 
 ### /check-envs
+
 **Purpose:** Validate environment variables configuration
 
 **Usage:**
+
 - "Check environment variables"
 - "Verify my .env file"
 - "Are my environment variables set correctly?"
 - `/check-envs`
 
 **What it does:**
+
 - Reads `.env` file from project root
 - Checks all required Cloudflare variables (CLOUDFLARE_API, CLOUDFLARE_ACCOUNT_ID)
 - Checks optional Supabase variables (SUPABASE_URL, SUPABASE_ANON_KEY, etc.)
@@ -155,12 +173,14 @@ MCP servers are configured in `.mcp.json` at the project root. This file is chec
 - Cross-platform (Unix/Mac/Windows)
 
 **When to use:**
+
 - Before first deployment
 - After updating .env file
 - When troubleshooting deployment issues
 - When onboarding new team members
 
 **Output:**
+
 - ✅ Green: Variable is properly set
 - ⚠️ Yellow: Placeholder value detected
 - ❌ Red: Variable is missing
@@ -168,9 +188,11 @@ MCP servers are configured in `.mcp.json` at the project root. This file is chec
 **Future:** Format validation, configuration suggestions, multi-environment support
 
 ### /deployment
+
 **Purpose:** Unified deployment to Cloudflare Workers and/or Supabase Edge Functions with branch-based environments
 
 **Usage:**
+
 - "Deploy the API"
 - "Deploy to Cloudflare"
 - "Deploy to Supabase"
@@ -178,6 +200,7 @@ MCP servers are configured in `.mcp.json` at the project root. This file is chec
 - `/deployment`
 
 **What it does:**
+
 - Detects current git branch (main/master = production, others = preview)
 - Prompts for platform selection (Cloudflare / Supabase / Both)
 - Verifies platform-specific environment variables
@@ -188,6 +211,7 @@ MCP servers are configured in `.mcp.json` at the project root. This file is chec
 - Cross-platform (Unix/Mac/Windows)
 
 **Deployment URLs:**
+
 - **Cloudflare Production:** `https://api.<subdomain>.workers.dev`
 - **Cloudflare Preview:** `https://api-<branch-name>.<subdomain>.workers.dev`
 - **Supabase Production:** `https://<project-ref>.supabase.co/functions/v1/`
@@ -210,6 +234,7 @@ MCP servers are configured in `.mcp.json` at the project root. This file is chec
 ### Local Development
 
 **Start dev server:**
+
 ```bash
 cd apps/api
 bun run dev
@@ -222,17 +247,20 @@ bun run dev
 ### Deployment Process
 
 **Manual deployment:**
+
 ```bash
 cd apps/api
 bun run deploy
 ```
 
 **Using skill:**
+
 ```
 /deployment
 ```
 
 **What happens:**
+
 1. Environment variables loaded from `.env`
 2. `CLOUDFLARE_API` mapped to `CLOUDFLARE_API_TOKEN`
 3. Wrangler deploys with minification
@@ -249,11 +277,13 @@ The deployment skill automatically detects your git branch and deploys to enviro
 | Any other branch | Preview |
 
 **Cloudflare Workers:**
+
 - Production: `https://api.*.workers.dev`
 - Feature branch: `https://api-<branch-name>.*.workers.dev`
 - Example: `feature/user-auth` → `api-feature-user-auth`
 
 **Supabase Edge Functions:**
+
 - Production: Deploys to main project
 - Feature branch: Creates/uses Supabase preview branch with isolated database
 
@@ -264,20 +294,22 @@ Cloudflare Workers doesn't have native git branch support like some platforms. T
 **The Pattern:**
 Each git branch deploys to a separate, independent Cloudflare Worker with a branch-derived name:
 
-| Git Branch | Worker Name | URL |
-|------------|-------------|-----|
-| `main` / `master` | `api` | `https://api.<subdomain>.workers.dev` |
-| `test` | `api-test` | `https://api-test.<subdomain>.workers.dev` |
-| `feature/login` | `api-feature-login` | `https://api-feature-login.<subdomain>.workers.dev` |
-| `fix/bug-123` | `api-fix-bug-123` | `https://api-fix-bug-123.<subdomain>.workers.dev` |
+| Git Branch        | Worker Name         | URL                                                 |
+| ----------------- | ------------------- | --------------------------------------------------- |
+| `main` / `master` | `api`               | `https://api.<subdomain>.workers.dev`               |
+| `test`            | `api-test`          | `https://api-test.<subdomain>.workers.dev`          |
+| `feature/login`   | `api-feature-login` | `https://api-feature-login.<subdomain>.workers.dev` |
+| `fix/bug-123`     | `api-fix-bug-123`   | `https://api-fix-bug-123.<subdomain>.workers.dev`   |
 
 **Naming Rules:**
+
 - Max 63 characters (DNS limit)
 - Only lowercase alphanumeric and hyphens allowed
 - Slashes (`/`) and underscores (`_`) converted to hyphens (`-`)
 - Leading/trailing hyphens removed
 
 **Key Characteristics:**
+
 - **Completely independent**: Each worker is a separate deployment with its own URL, logs, and metrics
 - **No automatic merging**: Deploying to `main` doesn't affect preview workers and vice versa
 - **Manual cleanup required**: Preview workers persist until explicitly deleted
@@ -287,20 +319,24 @@ Each git branch deploys to a separate, independent Cloudflare Worker with a bran
 ### Finding Deployments in Cloudflare Console
 
 **Workers & Pages Dashboard:**
+
 ```
 https://dash.cloudflare.com/<ACCOUNT_ID>/workers-and-pages
 ```
 
 **Direct link to specific worker:**
+
 ```
 https://dash.cloudflare.com/<ACCOUNT_ID>/workers/services/view/<WORKER_NAME>
 ```
 
 Examples:
+
 - Production: `https://dash.cloudflare.com/<ACCOUNT_ID>/workers/services/view/api`
 - Preview (test branch): `https://dash.cloudflare.com/<ACCOUNT_ID>/workers/services/view/api-test`
 
 **Navigation Steps:**
+
 1. Go to https://dash.cloudflare.com
 2. Select your account
 3. Click **Workers & Pages** in the left sidebar
@@ -312,6 +348,7 @@ Examples:
    - **Settings**: Environment variables, triggers, bindings
 
 **Logs for specific worker:**
+
 ```
 https://dash.cloudflare.com/<ACCOUNT_ID>/workers/services/view/<WORKER_NAME>/production/observability/logs
 ```
@@ -320,11 +357,13 @@ Replace `<ACCOUNT_ID>` with your `CLOUDFLARE_ACCOUNT_ID` from `.env`.
 
 **Important - Supabase Branch Credentials:**
 Supabase preview branches have their own API keys. When deploying to a feature branch:
+
 1. The script prompts to create a Supabase preview branch if needed
 2. After deployment, run: `supabase branches get <branch-name> --project-ref $SUPABASE_PROJECT_REF`
 3. If your Cloudflare Worker connects to Supabase, update its secrets with branch credentials
 
 **Cleanup:**
+
 ```bash
 # Delete Cloudflare preview worker
 wrangler delete --name api-feature-user-auth
@@ -371,12 +410,14 @@ https://dash.cloudflare.com/{CLOUDFLARE_ACCOUNT_ID}/workers/services/view/api/pr
 Replace `{CLOUDFLARE_ACCOUNT_ID}` with your account ID from `.env`.
 
 **View logs from CLI:**
+
 ```bash
 cd apps/api
 wrangler tail
 ```
 
 This streams real-time logs including:
+
 - Console output (`console.log`, `console.error`, etc.)
 - Request details and response status codes
 - Errors and exceptions
@@ -391,6 +432,7 @@ All `console.log()` statements in your worker code will appear in these logs.
 The API uses Hono, a lightweight and ultrafast web framework designed for edge computing.
 
 **Current endpoints:**
+
 - `GET /` - Health check, returns "AI start!"
 - `GET /db-test` - Tests Supabase connection and configuration
 
@@ -399,10 +441,12 @@ The API uses Hono, a lightweight and ultrafast web framework designed for edge c
 The API includes Supabase client integration for database operations:
 
 **Client Setup:** `apps/api/src/lib/supabase.ts`
+
 - `createSupabaseClient()` - Creates client with anon key (respects RLS)
 - `createSupabaseAdminClient()` - Creates client with service role key (bypasses RLS)
 
 **Usage:**
+
 ```typescript
 import { createSupabaseClient } from './lib/supabase';
 
@@ -415,6 +459,7 @@ app.get('/data', async (c) => {
 
 **Environment Variables:**
 The Cloudflare Worker expects these variables as bindings (set in .env, loaded during deployment):
+
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (optional, for admin operations)
@@ -422,17 +467,20 @@ The Cloudflare Worker expects these variables as bindings (set in .env, loaded d
 ### Configuration Files
 
 **wrangler.jsonc:**
+
 - Worker name: "api"
 - Entry point: "src/index.ts"
 - Compatibility date: "2026-01-16"
 - Account ID: Loaded from `CLOUDFLARE_ACCOUNT_ID` env var
 
 **package.json scripts:**
+
 - `dev` - Start local development server
 - `deploy` - Deploy to Cloudflare with minification
 - `cf-typegen` - Generate TypeScript types for Cloudflare bindings
 
 **tsconfig.json:**
+
 - Target: ESNext
 - Module resolution: Bundler
 - Strict mode: Enabled
@@ -440,12 +488,100 @@ The Cloudflare Worker expects these variables as bindings (set in .env, loaded d
 
 ## Code Standards and Conventions
 
+### Git Hooks & Code Quality
+
+This project enforces code quality through automated Git hooks powered by [Husky](https://typicode.github.io/husky/).
+
+**Automated Checks:**
+
+| Hook         | When                        | What it does                                    |
+| ------------ | --------------------------- | ----------------------------------------------- |
+| `pre-commit` | Before each commit          | Runs Prettier via lint-staged on staged files   |
+| `commit-msg` | When writing commit message | Validates commit message format with commitlint |
+
+**Commit Message Format (Conventional Commits):**
+
+All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+
+```
+<type>(<scope>): <subject>
+```
+
+**Allowed types:**
+
+- `feat` - New feature
+- `fix` - Bug fix
+- `docs` - Documentation changes
+- `style` - Code style changes (formatting, semicolons, etc.)
+- `refactor` - Code refactoring (no functional changes)
+- `perf` - Performance improvements
+- `test` - Adding or updating tests
+- `build` - Build system or external dependencies
+- `ci` - CI/CD configuration
+- `chore` - Maintenance tasks
+- `revert` - Reverting previous commits
+
+**Commit Message Rules:**
+
+- Type must be lowercase
+- Subject must be lowercase
+- Subject must not end with a period
+- Header max length: 100 characters
+- Body line max length: 100 characters
+
+**Examples:**
+
+```bash
+# ✅ Good
+git commit -m "feat: add user authentication"
+git commit -m "fix(api): resolve database connection timeout"
+git commit -m "docs: update README with deployment instructions"
+
+# ❌ Bad (will be rejected)
+git commit -m "fixed stuff"
+git commit -m "WIP"
+git commit -m "Update file"
+```
+
+**Code Formatting:**
+
+Prettier is used for consistent code formatting. Configuration is in `.prettierrc`.
+
+```bash
+# Format all files
+bun run format
+
+# Check formatting (CI/CD)
+bun run format:check
+```
+
+**Supported file types:** TypeScript, JavaScript, JSON, YAML, Markdown, CSS, HTML
+
+**Configuration Files:**
+
+- `.husky/pre-commit` - Pre-commit hook script
+- `.husky/commit-msg` - Commit message validation hook
+- `commitlint.config.js` - Commit message rules
+- `lint-staged.config.js` - Staged files linting configuration
+- `.prettierrc` - Prettier formatting rules
+- `.prettierignore` - Files to exclude from formatting
+
+**Bypassing Hooks (Emergency Only):**
+
+```bash
+git commit --no-verify -m "feat: emergency fix"
+# or
+HUSKY=0 git commit -m "feat: emergency fix"
+```
+
 ### File Organization
+
 - Keep related functionality together
 - Use descriptive file and folder names
 - Separate concerns (routes, middleware, utilities)
 
 ### TypeScript
+
 - Strict mode enabled
 - Use proper type definitions
 - Leverage Cloudflare type generation
@@ -457,6 +593,7 @@ The Cloudflare Worker expects these variables as bindings (set in .env, loaded d
 Supabase Edge Functions run on Deno, a secure runtime for JavaScript and TypeScript.
 
 **Current functions:**
+
 - `hello-world` - Example function that returns a greeting
   - Supports GET and POST requests
   - Query parameter: `?name=YourName`
@@ -466,6 +603,7 @@ Supabase Edge Functions run on Deno, a secure runtime for JavaScript and TypeScr
 ### Function Structure
 
 Each function is in its own directory:
+
 ```
 supabase/functions/
   └── function-name/
@@ -500,11 +638,13 @@ supabase functions deploy hello-world
 ### Configuration
 
 **supabase/config.toml:**
+
 - Deno version: 1.38.5
 - Edge runtime settings
 - Local development ports
 
 ### API Design
+
 - RESTful conventions
 - Clear endpoint naming
 - Proper HTTP status codes
@@ -513,26 +653,32 @@ supabase functions deploy hello-world
 ## Common Issues and Solutions
 
 ### "wrangler: command not found"
+
 - **Cause:** Dependencies not installed or wrangler not in PATH
 - **Solution:** Run `bun install` in `apps/api` directory
 
 ### "Unable to authenticate request"
+
 - **Cause:** Invalid or missing Cloudflare API token
 - **Solution:** Verify `CLOUDFLARE_API` in `.env` is a valid API token with Workers Scripts > Edit permission
 
 ### "bun: command not found"
+
 - **Cause:** Bun not installed
 - **Solution:** Install from https://bun.sh
 
 ### MCP servers not available
+
 - **Cause:** `.mcp.json` changes require restart
 - **Solution:** Restart Claude Code after modifying `.mcp.json`
 
 ### "supabase: command not found"
+
 - **Cause:** Supabase CLI not installed
 - **Solution:** Install via `npm install -g supabase` or `brew install supabase/tap/supabase`
 
 ### "Failed to link Supabase project"
+
 - **Cause:** Not logged in or invalid project reference
 - **Solution:**
   1. Run `supabase login` to authenticate
@@ -540,6 +686,7 @@ supabase functions deploy hello-world
   3. Try manual linking: `supabase link --project-ref <your-ref>`
 
 ### Supabase connection fails in API
+
 - **Cause:** Missing or incorrect environment variables
 - **Solution:**
   1. Check `.env` has all Supabase variables
@@ -580,3 +727,16 @@ The `plan.md` file helps structure feature development before implementation. Se
 - MCP servers enhance capabilities but require restart after configuration changes
 - This is a template project - structure will expand as more apps/packages are added
 - The API (`apps/api`) can connect to Supabase database using the client in `src/lib/supabase.ts`
+
+### Git Hooks & Commit Guidelines
+
+- **Commit messages MUST follow Conventional Commits format** - the commit-msg hook will reject non-compliant messages
+- When making commits on behalf of the user, ALWAYS use the proper format: `<type>(<scope>): <subject>`
+- Common types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+- Subject must be lowercase and not end with a period
+- Header max length is 100 characters
+- **Pre-commit hook runs Prettier automatically** - code will be formatted before commit
+- If a commit fails due to formatting, the hook will fix it automatically; the user just needs to re-stage and commit
+- To bypass hooks in emergencies: `git commit --no-verify -m "type: message"` (not recommended)
+- Run `bun run format` to format all files manually
+- Run `bun run format:check` to check formatting without changes (useful for CI)

@@ -21,6 +21,7 @@ Before diving into code, we recommend using the `plan.md` file to structure your
 4. **Share with AI agents** (Claude Code, Cursor) for better assistance
 
 The planning template helps you:
+
 - Break down complex features into manageable tasks
 - Document architecture decisions
 - Maintain context across development sessions
@@ -116,17 +117,20 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 **Installation Options:**
 
 **macOS (Homebrew - Recommended):**
+
 ```bash
 brew install supabase/tap/supabase
 ```
 
 **Windows (Scoop):**
+
 ```bash
 scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
 scoop install supabase
 ```
 
 **Cross-platform (npm/npx):**
+
 ```bash
 # Install globally
 npm install -g supabase
@@ -136,6 +140,7 @@ npx supabase [command]
 ```
 
 **Linux:**
+
 ```bash
 # Download the latest release
 curl -L https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz -o supabase.tar.gz
@@ -146,6 +151,7 @@ sudo mv supabase /usr/local/bin/supabase
 ```
 
 **Verify Installation:**
+
 ```bash
 supabase --version
 ```
@@ -168,6 +174,7 @@ bun install
 ```
 
 Or use the Claude Code dependencies skill:
+
 ```bash
 /dependencies
 ```
@@ -181,11 +188,13 @@ Before deploying, verify that all environment variables are correctly configured
 ```
 
 This will check your `.env` file and report:
+
 - ✅ Which variables are properly configured
-- ⚠️  Which variables have placeholder values that need updating
+- ⚠️ Which variables have placeholder values that need updating
 - ❌ Which required variables are missing
 
 **Example output:**
+
 ```
 ╔═══════════════════════════════════════════╗
 ║   Environment Variables Check             ║
@@ -216,15 +225,18 @@ Summary
 ##### Deploy to Cloudflare Workers
 
 **Manual deployment:**
+
 ```bash
 cd apps/api
 bun run deploy
 ```
 
 **Using Claude Code deployment skill:**
+
 ```bash
 /deployment
 ```
+
 Then select "Cloudflare Workers" from the menu.
 
 Your API will be deployed to: `https://api.<your-subdomain>.workers.dev`
@@ -232,19 +244,23 @@ Your API will be deployed to: `https://api.<your-subdomain>.workers.dev`
 ##### Deploy to Supabase Edge Functions (If Configured)
 
 **⚠️ Prerequisites:**
+
 - Supabase CLI must be installed (see step 4 above)
 - You must be authenticated (`supabase login`)
 - Environment variables must be configured in `.env`
 
 **Manual deployment:**
+
 ```bash
 supabase functions deploy
 ```
 
 **Using Claude Code deployment skill:**
+
 ```bash
 /deployment
 ```
+
 Then select "Supabase Edge Functions" from the menu.
 
 **Note:** If Supabase CLI is not installed, the deployment will skip Supabase and only deploy to Cloudflare Workers.
@@ -254,9 +270,11 @@ Your functions will be available at: `https://<your-ref>.supabase.co/functions/v
 ##### Deploy to Both Platforms
 
 The deployment skill supports deploying to both platforms simultaneously:
+
 ```bash
 /deployment
 ```
+
 Then select "Both platforms" from the menu.
 
 ### Monitoring and Logs
@@ -266,6 +284,7 @@ The API has observability logging enabled, which captures all console output and
 **View logs in Cloudflare Dashboard:**
 
 Navigate to:
+
 ```
 https://dash.cloudflare.com/{YOUR_ACCOUNT_ID}/workers/services/view/api/production/observability/logs?workers-observability-view=events
 ```
@@ -280,6 +299,7 @@ wrangler tail
 ```
 
 This will stream real-time logs including:
+
 - Console output (`console.log`, `console.error`, etc.)
 - Request/response details
 - Errors and exceptions
@@ -307,12 +327,14 @@ This project uses [Model Context Protocol (MCP)](https://modelcontextprotocol.io
 The following MCP servers are pre-configured in `.mcp.json`:
 
 #### 1. Supabase MCP
+
 - **Purpose:** Database and backend services integration
 - **Type:** HTTP server
 - **URL:** `https://mcp.supabase.com/mcp`
 - **Enables:** Claude to interact with Supabase services, manage databases, auth, and storage
 
 #### 2. Playwright MCP
+
 - **Purpose:** Browser automation and testing
 - **Type:** stdio server (via npx)
 - **Command:** `npx @playwright/mcp@latest`
@@ -334,6 +356,7 @@ To add additional MCP servers:
 4. Update this README and `claude.md` with the new server details
 
 **Example:**
+
 ```json
 {
   "mcpServers": {
@@ -359,10 +382,185 @@ The `claude.md` file contains comprehensive project context for AI coding agents
 
 **For best results:** AI agents (Claude Code, Cursor) automatically read `claude.md` to understand your project. Keep it updated as your project evolves.
 
+## Design System
+
+This template includes a design system to ensure consistent UI/UX across all applications.
+
+### Design Foundations
+
+The `design-foundations.md` file is the **single source of truth** for shared UI foundations.
+
+**⚠️ Important:** This file contains placeholder values (`<placeholder>`) that must be replaced with your actual design tokens before use. Fill in:
+
+- Color palette (primary, secondary, semantic colors)
+- Typography (font families, type scale, weights)
+- Spacing system
+- Component patterns (buttons, cards, inputs)
+- Animation guidelines
+- Responsive breakpoints
+
+### Screen Designs
+
+Individual screen designs live in the `designs/` folder. Each design file can specify:
+
+- Screen layout and components
+- User interactions and flows
+- Screen-specific overrides to the foundations
+
+**Note:** If a screen spec in `designs/*.md` conflicts with `design-foundations.md`, the screen spec wins for that specific screen.
+
+### Creating ASCII Wireframes with ASCII Flow
+
+For quick wireframing, use [ASCII Flow](https://asciiflow.com) — a free web app for drawing ASCII diagrams.
+
+**How to use ASCII Flow:**
+
+1. **Visit** [https://asciiflow.com](https://asciiflow.com)
+2. **Draw** your wireframe using the tools:
+   - Rectangle tool for containers, cards, buttons
+   - Line tool for borders and separators
+   - Text tool for labels and content
+   - Arrow tool for flows and connections
+3. **Export** your diagram (Select All → Copy)
+4. **Paste** into your design file in `designs/`
+
+**AI Workflow for Screen Design:**
+
+1. **Sketch in ASCII Flow** — Draw a rough wireframe of your screen
+2. **Create a design file** — Save as `designs/your-screen.md`
+3. **Add the wireframe** — Paste your ASCII art in a code block:
+   ```
+   ┌────────────────────────────────────┐
+   │  Header                      [Menu]│
+   ├────────────────────────────────────┤
+   │                                    │
+   │  ┌──────────┐  ┌──────────┐       │
+   │  │  Card 1  │  │  Card 2  │       │
+   │  └──────────┘  └──────────┘       │
+   │                                    │
+   │  [Primary Button]                  │
+   │                                    │
+   └────────────────────────────────────┘
+   ```
+4. **Add specifications** — Document interactions, states, and data
+5. **Share with AI** — Tell your AI agent:
+   > "Read `designs/your-screen.md` and `design-foundations.md`, then implement this screen"
+
+**Example prompt for AI agents:**
+
+```
+Read the design spec in designs/dashboard.md along with design-foundations.md.
+Implement this screen using React/SwiftUI/etc following the design tokens and
+patterns defined in the foundations.
+```
+
+This workflow gives AI agents clear visual context and design constraints, resulting in more accurate implementations.
+
+## Git Hooks & Code Quality
+
+This project uses [Husky](https://typicode.github.io/husky/) to enforce code quality standards via Git hooks. All hooks run automatically — no manual intervention required.
+
+### Automated Checks
+
+| Hook           | When                        | What it does                                                                                         |
+| -------------- | --------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **pre-commit** | Before each commit          | Runs Prettier on staged files to ensure consistent formatting                                        |
+| **commit-msg** | When writing commit message | Validates commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format |
+
+### Commit Message Format
+
+All commits must follow the **Conventional Commits** specification:
+
+```
+<type>(<scope>): <subject>
+
+[optional body]
+
+[optional footer]
+```
+
+**Allowed types:**
+| Type | Description |
+|------|-------------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation changes |
+| `style` | Code style changes (formatting, semicolons, etc.) |
+| `refactor` | Code refactoring (no functional changes) |
+| `perf` | Performance improvements |
+| `test` | Adding or updating tests |
+| `build` | Build system or external dependencies |
+| `ci` | CI/CD configuration |
+| `chore` | Maintenance tasks |
+| `revert` | Reverting previous commits |
+
+**Examples:**
+
+```bash
+# ✅ Good commit messages
+git commit -m "feat: add user authentication"
+git commit -m "fix(api): resolve database connection timeout"
+git commit -m "docs: update README with deployment instructions"
+git commit -m "refactor(auth): simplify token validation logic"
+
+# ❌ Bad commit messages (will be rejected)
+git commit -m "fixed stuff"
+git commit -m "WIP"
+git commit -m "Update file"
+```
+
+### Code Formatting
+
+The project uses [Prettier](https://prettier.io/) for consistent code formatting across all files.
+
+**Manual formatting commands:**
+
+```bash
+# Format all files
+bun run format
+
+# Check formatting without making changes
+bun run format:check
+```
+
+**Supported file types:**
+
+- TypeScript/JavaScript (`.ts`, `.tsx`, `.js`, `.jsx`)
+- JSON/YAML (`.json`, `.yaml`, `.yml`)
+- Markdown (`.md`)
+- CSS/SCSS (`.css`, `.scss`)
+- HTML (`.html`)
+
+### Configuration Files
+
+| File                    | Purpose                            |
+| ----------------------- | ---------------------------------- |
+| `.husky/pre-commit`     | Pre-commit hook script             |
+| `.husky/commit-msg`     | Commit message validation hook     |
+| `commitlint.config.js`  | Commit message rules               |
+| `lint-staged.config.js` | Staged files linting configuration |
+| `.prettierrc`           | Prettier formatting rules          |
+| `.prettierignore`       | Files to exclude from formatting   |
+
+### Bypassing Hooks (Emergency Only)
+
+In rare cases where you need to bypass hooks (not recommended):
+
+```bash
+# Skip pre-commit hook
+git commit --no-verify -m "feat: emergency fix"
+
+# Skip all hooks
+HUSKY=0 git commit -m "feat: emergency fix"
+```
+
+**⚠️ Warning:** Only bypass hooks in genuine emergencies. Bypassing regularly defeats the purpose of automated quality checks.
+
 ## Features
 
 ### Current Features
 
+- **Git Hooks & Code Quality** - Husky, lint-staged, commitlint, and Prettier for automated code quality
 - **Multi-Platform Deployment** - Deploy to Cloudflare Workers and/or Supabase Edge Functions
 - **Unified Deployment Skill** - One command to deploy to multiple platforms
 - **Supabase Integration** - Database client for Cloudflare Workers API
@@ -380,13 +578,17 @@ The `claude.md` file contains comprehensive project context for AI coding agents
 ### Available Skills
 
 #### `/dependencies`
+
 Manage project dependencies across all apps.
+
 - Automatically runs `bun install` in the correct directories
 - Verifies installation success
 - Cross-platform support
 
 #### `/check-envs`
+
 Validate environment variables configuration.
+
 - Checks all required and optional environment variables
 - Detects placeholder values that need to be replaced
 - Provides color-coded status report
@@ -394,10 +596,11 @@ Validate environment variables configuration.
 - Cross-platform support (Unix/Mac/Windows)
 
 #### `/deployment`
+
 Unified deployment to Cloudflare Workers and/or Supabase Edge Functions.
+
 - Interactive platform selection (Cloudflare / Supabase / Both)
 - Validates platform-specific environment variables
 - Deploys to selected platform(s)
 - Returns deployment URLs and status
 - Cross-platform support (Unix/Mac/Windows)
-
