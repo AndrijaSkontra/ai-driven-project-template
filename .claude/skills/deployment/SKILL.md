@@ -35,6 +35,83 @@ Before deploying to Supabase, verify:
 4. Project is linked (script will attempt to link automatically)
 5. Functions exist in `supabase/functions/` directory
 
+## Branch-Based Deployments
+
+The deployment skill automatically detects your git branch and deploys accordingly:
+
+### Branch Detection
+
+| Branch | Environment | Description |
+|--------|-------------|-------------|
+| `main` / `master` | Production | Deploys to production resources |
+| Any other branch | Preview | Creates branch-specific resources |
+
+### Cloudflare Workers Branch Naming
+
+Feature branches deploy to separate workers with sanitized names:
+
+| Git Branch | Worker Name | URL |
+|------------|-------------|-----|
+| `main` | `api` | `https://api.*.workers.dev` |
+| `feature/user-auth` | `api-feature-user-auth` | `https://api-feature-user-auth.*.workers.dev` |
+| `fix/login-bug` | `api-fix-login-bug` | `https://api-fix-login-bug.*.workers.dev` |
+
+**Naming Rules:**
+- Max 63 characters (DNS limit)
+- Only lowercase alphanumeric and hyphens
+- Slashes and underscores converted to hyphens
+- Leading/trailing hyphens removed
+
+### Supabase Preview Branches
+
+For feature branches, the script:
+1. Checks if a Supabase preview branch exists
+2. Prompts to create one if it doesn't
+3. Deploys functions to the branch environment
+
+**Important:** Supabase preview branches have their own:
+- Project reference (different URL)
+- `anon` API key
+- `service_role` API key
+- Isolated database
+
+After deploying to a Supabase branch, run the following to get credentials:
+```bash
+supabase branches get <branch-name> --project-ref $SUPABASE_PROJECT_REF
+```
+
+### Cleanup Commands
+
+**Delete Cloudflare Preview Worker:**
+```bash
+wrangler delete --name api-feature-user-auth
+```
+
+**Delete Supabase Preview Branch:**
+```bash
+supabase branches delete feature-user-auth --project-ref $SUPABASE_PROJECT_REF
+```
+
+### Connecting Cloudflare to Supabase Branches
+
+When your Cloudflare Worker connects to Supabase, and you deploy to a feature branch:
+
+1. The Cloudflare Worker deploys as `api-<branch-name>`
+2. You need to update the worker's environment variables with the branch-specific Supabase credentials
+
+**Option 1: Use Wrangler Secrets (Recommended)**
+```bash
+# Get branch credentials
+supabase branches get feature-user-auth --project-ref $SUPABASE_PROJECT_REF
+
+# Set secrets on branch worker
+wrangler secret put SUPABASE_URL --name api-feature-user-auth
+wrangler secret put SUPABASE_ANON_KEY --name api-feature-user-auth
+```
+
+**Option 2: Use separate .dev.vars files**
+Create branch-specific local configuration for testing.
+
 ## Deployment Process
 
 ### Step 1: Environment Verification

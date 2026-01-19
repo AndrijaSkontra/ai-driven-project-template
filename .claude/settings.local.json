@@ -19,7 +19,11 @@
       "Bash(/Users/askontra/dev-test/ai-driven-project-template/.claude/skills/check-envs/scripts/check-envs.sh:*)",
       "Bash(DEPLOY_TARGET=both .claude/skills/deployment/scripts/deploy.sh:*)",
       "Bash(curl:*)",
-      "Bash(DEPLOY_TARGET=cloudflare .claude/skills/deployment/scripts/deploy.sh:*)"
+      "Bash(DEPLOY_TARGET=cloudflare .claude/skills/deployment/scripts/deploy.sh:*)",
+      "WebFetch(domain:supabase.com)",
+      "WebFetch(domain:developers.cloudflare.com)",
+      "Bash(bash -n:*)",
+      "Bash(pwsh:*)"
     ],
     "deny": [],
     "ask": []
