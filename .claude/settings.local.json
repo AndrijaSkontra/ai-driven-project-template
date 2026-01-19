@@ -23,7 +23,9 @@
       "WebFetch(domain:supabase.com)",
       "WebFetch(domain:developers.cloudflare.com)",
       "Bash(bash -n:*)",
-      "Bash(pwsh:*)"
+      "Bash(pwsh:*)",
+      "Skill(check-envs)",
+      "Bash(supabase link:*)"
     ],
     "deny": [],
     "ask": []

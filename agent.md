@@ -176,7 +176,7 @@ MCP servers are configured in `.mcp.json` at the project root. This file is chec
 
 **Output:**
 - ✅ Green: Variable is properly set
-- ⚠️  Yellow: Placeholder value detected
+- ⚠️ Yellow: Placeholder value detected
 - ❌ Red: Variable is missing
 
 ### deployment
