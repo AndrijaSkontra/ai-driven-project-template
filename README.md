@@ -31,12 +31,30 @@ The planning template helps you:
 
 ### Prerequisites
 
-Before you begin, ensure you have the following installed:
+Before you begin, ensure you have the following installed and configured:
 
 - **[Bun](https://bun.sh)** - JavaScript runtime and package manager (required)
 - **[Cloudflare Account](https://dash.cloudflare.com/sign-up)** - For deploying to Cloudflare Workers (required)
 - **[Supabase Account](https://supabase.com)** - For database and edge functions (optional)
 - **[Supabase CLI](https://supabase.com/docs/guides/cli)** - Required for deploying Edge Functions (optional, see installation instructions below)
+
+#### Trigger.dev Setup
+
+If you plan to use the Trigger.dev jobs in this template, you must configure your Trigger.dev project ID:
+
+1. Create or locate your project in the [Trigger.dev dashboard](https://trigger.dev)
+2. Copy your **Project ID / project ref**
+3. Open `trigger.config.ts` in the project root
+4. Replace the placeholder value in the `project` field:
+
+```ts
+export default defineConfig({
+  project: '<fill-with-project-id>', // ← replace this with your real Trigger.dev project ID
+  // ...
+});
+```
+
+Trigger.dev tasks will not work until this value is set correctly.
 
 ### Cloudflare Setup
 
