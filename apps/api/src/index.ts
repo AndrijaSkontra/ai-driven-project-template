@@ -6,7 +6,7 @@ const app = new Hono<{ Bindings: Env }>();
 
 app.get("/", (c) => {
   console.log(pc.green(`Starting the ${pc.italic(`server`)}`));
-  return c.text("AI start!");
+  return c.text("AI 2 start!");
 });
 
 app.get("/db-test", async (c) => {
@@ -16,11 +16,15 @@ app.get("/db-test", async (c) => {
 
     // Check if Supabase is configured
     if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
-      return c.json({
-        status: "not_configured",
-        message: "Supabase environment variables not set. Please configure SUPABASE_URL and SUPABASE_ANON_KEY.",
-        configured: false,
-      }, 200);
+      return c.json(
+        {
+          status: "not_configured",
+          message:
+            "Supabase environment variables not set. Please configure SUPABASE_URL and SUPABASE_ANON_KEY.",
+          configured: false,
+        },
+        200,
+      );
     }
 
     // Create Supabase client
@@ -43,11 +47,15 @@ app.get("/db-test", async (c) => {
     });
   } catch (error) {
     console.error("Supabase connection error:", error);
-    return c.json({
-      status: "error",
-      message: error instanceof Error ? error.message : "Unknown error occurred",
-      configured: true,
-    }, 500);
+    return c.json(
+      {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+        configured: true,
+      },
+      500,
+    );
   }
 });
 
