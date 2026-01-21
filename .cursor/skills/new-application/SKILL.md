@@ -1,6 +1,6 @@
 ---
 name: 'new-application'
-description: 'Create a default NextJS application'
+description: 'Use this when creating a new application in the /apps directory'
 ---
 
 When creating a web application, frontend:
@@ -8,11 +8,11 @@ When creating a web application, frontend:
 **For Unix/Mac/Linux:**
 
 ```bash
-.cursor/skills/new-application/scripts/create-nextjs-app.sh
+.claude/skills/new-application/scripts/create-nextjs-app.sh
 ```
 
 **For Windows PowerShell:**
 
 ```powershell
-.cursor/skills/new-application/scripts/create-nextjs-app.ps1
+.claude/skills/new-application/scripts/create-nextjs-app.ps1
 ```
