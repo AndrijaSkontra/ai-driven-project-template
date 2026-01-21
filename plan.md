@@ -1,317 +1,559 @@
-# Feature Planning Template
+# Kanban Project Management App - Implementation Plan
 
-## What is plan.md?
+## Environment Status (Verified ✅)
 
-This file helps you plan and structure feature development before implementation. Use it to:
+| Variable                  | Status |
+| ------------------------- | ------ |
+| CLOUDFLARE_API            | ✅ Set |
+| CLOUDFLARE_ACCOUNT_ID     | ✅ Set |
+| SUPABASE_URL              | ✅ Set |
+| SUPABASE_ANON_KEY         | ✅ Set |
+| SUPABASE_SERVICE_ROLE_KEY | ✅ Set |
+| SUPABASE_PROJECT_REF      | ✅ Set |
 
-- Break down complex features into manageable tasks
-- Document your approach and architecture decisions
-- Share your plan with AI agents (Claude Code, Cursor) for better assistance
-- Maintain context across development sessions
-- Review and refine your approach before coding
-
-## How to Use This Template
-
-1. Copy the template below for each new feature
-2. Fill in the sections with your specific requirements
-3. Share with your AI agent to get implementation help
-4. Update as you progress through development
-5. Archive completed plans for reference
+**Ready for deployment to Cloudflare Workers and Supabase.**
 
 ---
 
-## Feature Plan Template
+## Overview
 
-### Feature Name
+Build a full-featured project management application with:
 
-[Brief, descriptive name of the feature]
+- **Kanban boards** (advanced: swimlanes, templates, automations)
+- **Chat/posting board** (real-time)
+- **Calendar** (integrated with tasks)
+- **Role-based access** (Admin & Worker roles)
 
-### Overview
+## Tech Stack
 
-[1-2 sentences describing what this feature does and why it's needed]
+| Layer           | Technology                            |
+| --------------- | ------------------------------------- |
+| Frontend        | Next.js 14+ (App Router)              |
+| Backend API     | Hono on Cloudflare Workers (existing) |
+| Database        | Supabase PostgreSQL with RLS          |
+| Auth            | Supabase Auth (Magic Link)            |
+| Real-time       | Supabase Realtime                     |
+| Background Jobs | Trigger.dev (existing)                |
+| File Storage    | Supabase Storage                      |
 
-### Goals
+## Database Schema
 
-- [ ] Primary goal 1
-- [ ] Primary goal 2
-- [ ] Primary goal 3
+### Core Tables
 
-### Non-Goals
+```sql
+-- Users (extends Supabase auth.users)
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  full_name TEXT,
+  avatar_url TEXT,
+  role TEXT NOT NULL DEFAULT 'worker' CHECK (role IN ('admin', 'worker')),
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-[What this feature explicitly does NOT include]
+-- Workspaces (multi-tenant support)
+CREATE TABLE workspaces (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-### Technical Approach
+-- Workspace Members
+CREATE TABLE workspace_members (
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  role TEXT NOT NULL DEFAULT 'worker' CHECK (role IN ('admin', 'worker')),
+  joined_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (workspace_id, user_id)
+);
 
-#### Architecture Changes
+-- Boards
+CREATE TABLE boards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  is_archived BOOLEAN DEFAULT false,
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-[Describe any changes to the overall system architecture]
+-- Columns
+CREATE TABLE columns (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  board_id UUID REFERENCES boards(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  color TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-#### New Components/Files
+-- Labels
+CREATE TABLE labels (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  board_id UUID REFERENCES boards(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  color TEXT NOT NULL
+);
 
-- `path/to/file.ts` - Description of purpose
-- `path/to/component.tsx` - Description of purpose
+-- Cards
+CREATE TABLE cards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  column_id UUID REFERENCES columns(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  position INTEGER NOT NULL,
+  due_date TIMESTAMPTZ,
+  swimlane_value TEXT, -- For grouping (assignee_id, priority, etc.)
+  swimlane_type TEXT,  -- 'assignee' | 'priority' | 'label' | null
+  template_id UUID REFERENCES card_templates(id),
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-#### Modified Files
+-- Card Assignees (many-to-many)
+CREATE TABLE card_assignees (
+  card_id UUID REFERENCES cards(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  assigned_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (card_id, user_id)
+);
 
-- `existing/file.ts` - What changes and why
+-- Card Labels (many-to-many)
+CREATE TABLE card_labels (
+  card_id UUID REFERENCES cards(id) ON DELETE CASCADE,
+  label_id UUID REFERENCES labels(id) ON DELETE CASCADE,
+  PRIMARY KEY (card_id, label_id)
+);
 
-#### Database/Storage Changes
+-- Card Comments
+CREATE TABLE card_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  card_id UUID REFERENCES cards(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES profiles(id),
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-[Any new tables, fields, or storage requirements]
+-- Card Templates
+CREATE TABLE card_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  board_id UUID REFERENCES boards(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  title_template TEXT,
+  description_template TEXT,
+  default_labels UUID[],
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-#### API Changes
+-- Automations
+CREATE TABLE automations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  board_id UUID REFERENCES boards(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  trigger_type TEXT NOT NULL, -- 'due_date_passed' | 'card_moved' | 'assigned'
+  trigger_config JSONB,
+  action_type TEXT NOT NULL,  -- 'move_card' | 'notify' | 'add_label'
+  action_config JSONB,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-[New or modified endpoints]
+-- Chat Channels
+CREATE TABLE channels (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  is_private BOOLEAN DEFAULT false,
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Chat Messages
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  channel_id UUID REFERENCES channels(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES profiles(id),
+  content TEXT NOT NULL,
+  reply_to UUID REFERENCES messages(id),
+  attachments JSONB DEFAULT '[]',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Message Reactions
+CREATE TABLE message_reactions (
+  message_id UUID REFERENCES messages(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  emoji TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (message_id, user_id, emoji)
+);
+
+-- Calendar Events
+CREATE TABLE calendar_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  start_time TIMESTAMPTZ NOT NULL,
+  end_time TIMESTAMPTZ NOT NULL,
+  all_day BOOLEAN DEFAULT false,
+  card_id UUID REFERENCES cards(id) ON DELETE SET NULL, -- Link to kanban card
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Event Attendees
+CREATE TABLE event_attendees (
+  event_id UUID REFERENCES calendar_events(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
+  PRIMARY KEY (event_id, user_id)
+);
+```
+
+### Row Level Security (RLS) Policies
+
+```sql
+-- Profiles: Users can read all profiles in their workspace, update own
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view profiles in their workspaces" ON profiles
+  FOR SELECT USING (
+    id IN (
+      SELECT wm.user_id FROM workspace_members wm
+      WHERE wm.workspace_id IN (
+        SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "Users can update own profile" ON profiles
+  FOR UPDATE USING (id = auth.uid());
+
+-- Workspace members can access workspace data
+CREATE POLICY "Workspace access" ON boards
+  FOR ALL USING (
+    workspace_id IN (
+      SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()
+    )
+  );
+
+-- Admin-only policies for user management
+CREATE POLICY "Admins can manage workspace members" ON workspace_members
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM workspace_members
+      WHERE workspace_id = workspace_members.workspace_id
+      AND user_id = auth.uid()
+      AND role = 'admin'
+    )
+  );
+```
+
+## API Endpoints (Hono)
+
+### Authentication
+
+- `POST /auth/magic-link` - Send magic link email
+- `GET /auth/callback` - Handle magic link callback
+- `GET /auth/me` - Get current user profile
+- `POST /auth/logout` - Sign out
+
+### User Management (Admin only)
+
+- `GET /users` - List all users in workspace
+- `POST /users/invite` - Invite user via email
+- `PATCH /users/:id/role` - Change user role
+- `PATCH /users/:id/status` - Activate/deactivate user
+
+### Workspaces
+
+- `GET /workspaces` - List user's workspaces
+- `POST /workspaces` - Create workspace
+- `GET /workspaces/:id` - Get workspace details
+- `PATCH /workspaces/:id` - Update workspace
+
+### Boards
+
+- `GET /workspaces/:id/boards` - List boards
+- `POST /workspaces/:id/boards` - Create board
+- `GET /boards/:id` - Get board with columns & cards
+- `PATCH /boards/:id` - Update board
+- `DELETE /boards/:id` - Archive board
+
+### Columns
+
+- `POST /boards/:id/columns` - Create column
+- `PATCH /columns/:id` - Update column
+- `DELETE /columns/:id` - Delete column
+- `POST /columns/reorder` - Reorder columns
+
+### Cards
+
+- `POST /columns/:id/cards` - Create card
+- `GET /cards/:id` - Get card details
+- `PATCH /cards/:id` - Update card
+- `DELETE /cards/:id` - Delete card
+- `POST /cards/:id/move` - Move card (column/position)
+- `POST /cards/:id/assignees` - Add assignee
+- `DELETE /cards/:id/assignees/:userId` - Remove assignee
+- `POST /cards/:id/labels` - Add label
+- `DELETE /cards/:id/labels/:labelId` - Remove label
+- `POST /cards/:id/comments` - Add comment
+
+### Templates & Automations
+
+- `GET /boards/:id/templates` - List templates
+- `POST /boards/:id/templates` - Create template
+- `GET /boards/:id/automations` - List automations
+- `POST /boards/:id/automations` - Create automation
+- `PATCH /automations/:id` - Update automation
+
+### Chat
+
+- `GET /workspaces/:id/channels` - List channels
+- `POST /workspaces/:id/channels` - Create channel
+- `GET /channels/:id/messages` - Get messages (paginated)
+- `POST /channels/:id/messages` - Send message
+- `POST /messages/:id/reactions` - Add reaction
+- `DELETE /messages/:id/reactions/:emoji` - Remove reaction
+
+### Calendar
+
+- `GET /workspaces/:id/events` - Get events (date range)
+- `POST /workspaces/:id/events` - Create event
+- `PATCH /events/:id` - Update event
+- `DELETE /events/:id` - Delete event
+- `GET /workspaces/:id/calendar/tasks` - Get tasks for calendar view
+
+## Frontend Structure (Next.js App Router)
 
 ```
-POST /api/new-endpoint
-Request: { ... }
-Response: { ... }
+apps/web/
+├── app/
+│   ├── (auth)/
+│   │   ├── login/page.tsx
+│   │   ├── auth/callback/route.ts
+│   │   └── layout.tsx
+│   ├── (dashboard)/
+│   │   ├── layout.tsx              # Sidebar, header
+│   │   ├── page.tsx                # Dashboard home
+│   │   ├── boards/
+│   │   │   ├── page.tsx            # Boards list
+│   │   │   └── [boardId]/
+│   │   │       ├── page.tsx        # Kanban view
+│   │   │       └── settings/page.tsx
+│   │   ├── chat/
+│   │   │   ├── page.tsx            # Channel list
+│   │   │   └── [channelId]/page.tsx
+│   │   ├── calendar/
+│   │   │   └── page.tsx
+│   │   └── admin/
+│   │       ├── users/page.tsx
+│   │       └── settings/page.tsx
+│   ├── api/                        # Next.js API routes (optional)
+│   └── layout.tsx
+├── components/
+│   ├── ui/                         # Base components (shadcn/ui)
+│   ├── kanban/
+│   │   ├── Board.tsx
+│   │   ├── Column.tsx
+│   │   ├── Card.tsx
+│   │   ├── CardModal.tsx
+│   │   └── Swimlane.tsx
+│   ├── chat/
+│   │   ├── ChannelList.tsx
+│   │   ├── MessageList.tsx
+│   │   ├── MessageInput.tsx
+│   │   └── Message.tsx
+│   ├── calendar/
+│   │   ├── CalendarView.tsx
+│   │   └── EventModal.tsx
+│   └── layout/
+│       ├── Sidebar.tsx
+│       └── Header.tsx
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts               # Browser client
+│   │   ├── server.ts               # Server client
+│   │   └── middleware.ts
+│   ├── api.ts                      # API client
+│   └── utils.ts
+├── hooks/
+│   ├── useRealtimeMessages.ts
+│   ├── useRealtimeCards.ts
+│   └── useAuth.ts
+└── types/
+    └── index.ts
 ```
 
-#### External Dependencies
+## Implementation Phases
 
-[Any new packages or services needed]
+### Phase 1: Foundation (Week 1-2)
 
-- `package-name` - Why it's needed
-- MCP server needed: [Yes/No]
+**Goal:** Auth, database, and basic project structure
 
-### Implementation Tasks
+1. Set up Next.js app in `apps/web`
+2. Configure Supabase Auth with Magic Link
+3. Create database migrations (all tables)
+4. Set up RLS policies
+5. Create profile management on sign-up
+6. Build auth UI (login, callback handling)
+7. Create basic dashboard layout
 
-#### Phase 1: [Phase Name]
+**Files to create/modify:**
 
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- `apps/web/` - New Next.js app
+- `supabase/migrations/` - Database schema
+- `apps/api/src/routes/auth.ts` - Auth endpoints
 
-#### Phase 2: [Phase Name]
+### Phase 2: User & Workspace Management (Week 2-3)
 
-- [ ] Task 1
-- [ ] Task 2
+**Goal:** Admin functionality and workspace setup
 
-#### Phase 3: [Phase Name]
+1. Build user management API (invite, roles, status)
+2. Create workspace CRUD
+3. Build admin UI for user management
+4. Implement role-based route protection
+5. Add workspace switcher
 
-- [ ] Task 1
-- [ ] Task 2
+**Files to create/modify:**
 
-### Testing Strategy
+- `apps/api/src/routes/users.ts`
+- `apps/api/src/routes/workspaces.ts`
+- `apps/api/src/middleware/auth.ts`
+- `apps/web/app/(dashboard)/admin/`
 
-- [ ] Unit tests for [components]
-- [ ] Integration tests for [workflows]
-- [ ] Manual testing checklist
-- [ ] Performance testing (if applicable)
+### Phase 3: Kanban Board (Week 3-5)
 
-### Deployment Considerations
+**Goal:** Full kanban functionality
 
-- Environment variables needed: [List]
-- Database migrations: [Yes/No]
-- Breaking changes: [Yes/No]
-- Rollback plan: [Describe]
+1. Board, column, card CRUD APIs
+2. Build kanban UI with drag-and-drop (@dnd-kit/core)
+3. Card modal with all fields
+4. Labels and assignees
+5. Comments system
+6. Swimlane grouping
+7. Card templates
+8. Real-time card updates via Supabase Realtime
 
-### Security Considerations
+**Files to create/modify:**
 
-[Any authentication, authorization, or data protection concerns]
+- `apps/api/src/routes/boards.ts`
+- `apps/api/src/routes/cards.ts`
+- `apps/web/components/kanban/`
 
-### Performance Considerations
+### Phase 4: Chat System (Week 5-6)
 
-[Expected load, caching strategy, optimization needs]
+**Goal:** Real-time messaging
 
-### Documentation Needed
+1. Channel and message APIs
+2. Real-time subscriptions setup
+3. Chat UI with message list
+4. Rich text input (Tiptap or similar)
+5. File uploads (Supabase Storage)
+6. Reactions
+7. Thread replies
 
-- [ ] Update README.md
-- [ ] Update claude.md
-- [ ] API documentation
-- [ ] User guide (if applicable)
+**Files to create/modify:**
 
-### Questions/Unknowns
+- `apps/api/src/routes/channels.ts`
+- `apps/api/src/routes/messages.ts`
+- `apps/web/components/chat/`
+- `apps/web/hooks/useRealtimeMessages.ts`
 
-[Things you need to research or decide before implementation]
+### Phase 5: Calendar (Week 6-7)
 
-1. Question 1?
-2. Question 2?
+**Goal:** Calendar view and events
 
-### Success Criteria
+1. Calendar events API
+2. Calendar UI (@fullcalendar/react)
+3. Event creation/editing modal
+4. Task integration (show card due dates)
+5. Attendee management
 
-[How will you know this feature is complete and working correctly?]
+**Files to create/modify:**
 
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
+- `apps/api/src/routes/calendar.ts`
+- `apps/web/components/calendar/`
+- `apps/web/app/(dashboard)/calendar/`
 
-### Timeline Estimate
+### Phase 6: Automations & Polish (Week 7-8)
 
-[Rough estimate of implementation time]
+**Goal:** Automations and production readiness
 
----
+1. Automation rules API
+2. Trigger.dev jobs for automation execution:
+   - Due date checker (scheduled)
+   - Card move handler
+   - Notification sender
+3. Automation builder UI
+4. Email notifications
+5. Performance optimization
+6. Error handling & loading states
 
-## Example Plan
+**Files to create/modify:**
 
-### Feature Name
+- `apps/api/src/routes/automations.ts`
+- `apps/jobs/src/automation-*.ts`
+- `apps/web/components/automations/`
 
-User Authentication with Supabase
+## Key Libraries
 
-### Overview
+### Frontend (apps/web)
 
-Add user authentication to the API using Supabase Auth, allowing users to sign up, log in, and access protected endpoints.
-
-### Goals
-
-- [ ] Enable email/password authentication
-- [ ] Protect API routes with JWT validation
-- [ ] Store user profiles in Supabase
-
-### Non-Goals
-
-- OAuth providers (future enhancement)
-- Multi-factor authentication (future enhancement)
-- Password reset flow (include in separate plan)
-
-### Technical Approach
-
-#### Architecture Changes
-
-- Add authentication middleware to Hono app
-- Integrate Supabase client for auth operations
-- Add protected route pattern
-
-#### New Components/Files
-
-- `apps/api/src/middleware/auth.ts` - JWT validation middleware
-- `apps/api/src/routes/auth.ts` - Auth endpoints (signup, login, logout)
-- `apps/api/src/lib/supabase.ts` - Supabase client initialization
-
-#### Modified Files
-
-- `apps/api/src/index.ts` - Register auth routes and middleware
-- `apps/api/wrangler.jsonc` - Add Supabase environment variables
-
-#### Database/Storage Changes
-
-- Use Supabase's built-in auth.users table
-- Add custom user profiles table in Supabase
-
-#### API Changes
-
-```
-POST /auth/signup
-Request: { email: string, password: string }
-Response: { user: User, session: Session }
-
-POST /auth/login
-Request: { email: string, password: string }
-Response: { user: User, session: Session }
-
-POST /auth/logout
-Headers: { Authorization: Bearer <token> }
-Response: { success: boolean }
-
-GET /auth/me
-Headers: { Authorization: Bearer <token> }
-Response: { user: User }
+```json
+{
+  "dependencies": {
+    "next": "^14.0.0",
+    "@supabase/supabase-js": "^2.x",
+    "@supabase/ssr": "^0.x",
+    "@dnd-kit/core": "^6.x",
+    "@dnd-kit/sortable": "^8.x",
+    "@fullcalendar/react": "^6.x",
+    "@fullcalendar/daygrid": "^6.x",
+    "@tiptap/react": "^2.x",
+    "date-fns": "^3.x",
+    "zustand": "^4.x",
+    "tailwindcss": "^3.x"
+  }
+}
 ```
 
-#### External Dependencies
+## Verification & Testing
 
-- `@supabase/supabase-js` - Supabase client library
-- MCP server needed: Yes (already configured)
+After each phase, verify:
 
-### Implementation Tasks
+1. **Auth:** Magic link email received, login works, session persists
+2. **RLS:** Users only see their workspace data
+3. **Admin:** Only admins can access /admin routes and user management
+4. **Kanban:** Drag-drop works, changes persist, real-time sync
+5. **Chat:** Messages appear instantly for all users in channel
+6. **Calendar:** Events display correctly, task due dates sync
 
-#### Phase 1: Setup
+### Manual Testing Checklist
 
-- [ ] Install @supabase/supabase-js
-- [ ] Add Supabase credentials to .env
-- [ ] Initialize Supabase client
-- [ ] Create user profiles table schema
+- [ ] Sign up with magic link
+- [ ] Create workspace
+- [ ] Invite another user as worker
+- [ ] Create board with columns
+- [ ] Create and move cards
+- [ ] Add comments to cards
+- [ ] Send messages in chat (verify real-time)
+- [ ] Create calendar events
+- [ ] Test admin can change roles
+- [ ] Test worker cannot access admin features
 
-#### Phase 2: Auth Endpoints
+### Automated Tests
 
-- [ ] Create signup endpoint
-- [ ] Create login endpoint
-- [ ] Create logout endpoint
-- [ ] Create "get current user" endpoint
-
-#### Phase 3: Middleware & Protection
-
-- [ ] Implement JWT validation middleware
-- [ ] Apply middleware to protected routes
-- [ ] Add error handling for auth failures
-
-### Testing Strategy
-
-- [ ] Unit tests for auth middleware
-- [ ] Integration tests for auth endpoints
-- [ ] Manual testing with Postman/curl
-- [ ] Test token expiration and refresh
-
-### Deployment Considerations
-
-- Environment variables needed: `SUPABASE_URL`, `SUPABASE_ANON_KEY`
-- Database migrations: Create user profiles table in Supabase dashboard
-- Breaking changes: No
-- Rollback plan: Remove auth routes, middleware remains non-breaking
-
-### Security Considerations
-
-- Store Supabase credentials as Cloudflare secrets
-- Use environment variables, not hardcoded values
-- Validate JWT signatures properly
-- Rate limit auth endpoints to prevent brute force
-- Use HTTPS only (Cloudflare Workers enforces this)
-
-### Performance Considerations
-
-- Cache Supabase client instance
-- Consider JWT validation caching for high-traffic routes
-- Monitor auth endpoint response times
-
-### Documentation Needed
-
-- [ ] Update README.md with auth setup instructions
-- [ ] Update claude.md with auth architecture
-- [ ] Create API documentation for auth endpoints
-- [ ] Add auth examples to user guide
-
-### Questions/Unknowns
-
-1. Should we implement refresh token rotation?
-2. What's the desired JWT expiration time?
-3. Do we need role-based access control now or later?
-
-### Success Criteria
-
-- [ ] Users can sign up with email/password
-- [ ] Users can log in and receive JWT
-- [ ] Protected routes reject requests without valid JWT
-- [ ] Protected routes allow requests with valid JWT
-- [ ] Auth state persists across requests
-
-### Timeline Estimate
-
-- Phase 1: 2 hours
-- Phase 2: 3 hours
-- Phase 3: 2 hours
-- Testing & Documentation: 2 hours
-- **Total: ~9 hours**
-
----
-
-## Tips for Working with AI Agents
-
-- **Be specific:** The more detail you provide, the better AI can help
-- **Update as you go:** Keep the plan current as you learn more
-- **Reference this file:** Tell Claude/Cursor "Read plan.md" to give context
-- **Use checkboxes:** Track progress with `- [ ]` and `- [x]`
-- **Ask for feedback:** AI agents can review and improve your plan
-- **Break it down:** Large features should be split into multiple plans
-
-## Planning Best Practices
-
-1. **Start with why:** Explain the business value and user need
-2. **Research first:** Investigate technical options before committing
-3. **Think in phases:** Break work into shippable increments
-4. **Consider risks:** Identify potential blockers early
-5. **Plan for testing:** Don't treat testing as an afterthought
-6. **Document decisions:** Future you will thank present you
-7. **Get feedback:** Share plans with team members or AI agents
-8. **Stay flexible:** Plans will change as you learn more
+- API endpoint tests with Vitest
+- E2E tests with Playwright (MCP configured)
