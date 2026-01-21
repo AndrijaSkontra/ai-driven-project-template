@@ -1,5 +1,3 @@
-# Project Context for Cursor
-
 ## Project Overview
 
 This is an AI-driven application development template designed to work seamlessly with AI coding agents like Claude Code and Cursor. The template provides a structured starting point for building applications with automated deployment, dependency management, and MCP (Model Context Protocol) integrations.
