@@ -155,6 +155,44 @@ supabase login
 
 This will open a browser for authentication.
 
+### Resend Setup (Optional)
+
+If you want to use Resend for sending transactional emails:
+
+#### 1. Create a Resend Account
+
+1. Sign up at [https://resend.com](https://resend.com)
+2. Verify your email address
+
+#### 2. Get Your API Key
+
+1. Go to [https://resend.com/api-keys](https://resend.com/api-keys)
+2. Click **"Create API Key"**
+3. Give it a name (e.g., "My Project API Key")
+4. Select the appropriate permissions (Full access for development)
+5. Click **"Add"** and copy the API key immediately
+
+#### 3. Add to Environment Variables
+
+Add the following to your `.env` file:
+
+```bash
+# Resend Configuration
+RESEND_KEY=re_your-api-key-here
+```
+
+#### 4. Domain Configuration (Production)
+
+For production use, you need to verify a domain:
+
+1. Go to [https://resend.com/domains](https://resend.com/domains)
+2. Click **"Add Domain"**
+3. Add your domain (e.g., `yourdomain.com`)
+4. Add the DNS records Resend provides to your domain
+5. Wait for verification (usually within a few minutes)
+
+**Testing without a domain:** Use `onboarding@resend.dev` as the sender for development/testing.
+
 ### Quick Start
 
 ```bash

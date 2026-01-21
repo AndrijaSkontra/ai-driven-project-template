@@ -84,6 +84,9 @@ SUPABASE_URL=<your_supabase_project_url>
 SUPABASE_ANON_KEY=<your_supabase_anon_key>
 SUPABASE_SERVICE_ROLE_KEY=<your_supabase_service_role_key>
 SUPABASE_PROJECT_REF=<your_supabase_project_ref>
+
+# Resend Configuration (Email Service)
+RESEND_KEY=<your_resend_api_key>
 ```
 
 **How to Get Credentials:**
@@ -112,11 +115,24 @@ SUPABASE_PROJECT_REF=<your_supabase_project_ref>
      - **anon public** key (SUPABASE_ANON_KEY) - Safe for client-side use with RLS
      - **service_role** key (SUPABASE_SERVICE_ROLE_KEY) - Server-only, bypasses RLS
 
+### Resend
+
+1. **Resend API Key:**
+   - Dashboard: https://resend.com/api-keys
+   - Click "Create API Key"
+   - Copy the key (starts with `re_`)
+
+2. **Domain Verification (Production):**
+   - Domains: https://resend.com/domains
+   - Add and verify your domain for production emails
+   - For testing, use `onboarding@resend.dev` as the sender
+
 **Security:**
 
 - The `.env` file is in `.gitignore` and should never be committed
 - `SUPABASE_SERVICE_ROLE_KEY` bypasses Row Level Security - NEVER expose publicly
 - `SUPABASE_ANON_KEY` is safe for client-side use as it respects RLS policies
+- `RESEND_KEY` should be kept secure and never exposed in client-side code
 
 ## MCP Server Configuration
 
@@ -474,6 +490,64 @@ The Cloudflare Worker expects these variables as bindings (set in .env, loaded d
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (optional, for admin operations)
 
+### Resend Integration (Email)
+
+The API includes Resend integration for sending transactional emails:
+
+**Client Setup:** `apps/api/src/lib/resend.ts`
+
+- `createResendClient()` - Creates a Resend client instance
+- `sendEmail()` - Helper function to send emails with simplified options
+
+**Usage:**
+
+```typescript
+import { createResendClient, sendEmail } from './lib/resend';
+
+// Option 1: Using the client directly
+app.post('/send-welcome', async (c) => {
+  const resend = createResendClient(c.env);
+  const { data, error } = await resend.emails.send({
+    from: 'onboarding@resend.dev', // Use your verified domain in production
+    to: 'user@example.com',
+    subject: 'Welcome!',
+    html: '<p>Welcome to our app!</p>',
+  });
+  return c.json({ data, error });
+});
+
+// Option 2: Using the helper function
+app.post('/contact', async (c) => {
+  const { error } = await sendEmail(c.env, {
+    from: 'noreply@yourdomain.com',
+    to: 'admin@yourdomain.com',
+    subject: 'New Contact Form Submission',
+    html: '<p>Someone contacted you!</p>',
+  });
+
+  if (error) {
+    return c.json({ error: error.message }, 500);
+  }
+  return c.json({ success: true });
+});
+```
+
+**Email Options:**
+
+- `from` - Sender email (must be verified domain or `onboarding@resend.dev` for testing)
+- `to` - Recipient email(s) (string or array)
+- `subject` - Email subject line
+- `html` - HTML content
+- `text` - Plain text content (optional)
+- `cc`, `bcc`, `replyTo` - Additional recipients
+
+**Environment Variables:**
+
+- `RESEND_KEY` - Your Resend API key (required)
+
+**Testing:**
+Use `onboarding@resend.dev` as the sender for development. For production, verify your domain at https://resend.com/domains.
+
 ### Configuration Files
 
 **wrangler.jsonc:**
@@ -719,6 +793,8 @@ The `plan.md` file helps structure feature development before implementation. Se
 - **Bun Documentation:** https://bun.sh/docs
 - **Cursor Documentation:** https://docs.cursor.com
 - **MCP Documentation:** https://modelcontextprotocol.io
+- **Resend Documentation:** https://resend.com/docs
+- **Resend Node.js SDK:** https://resend.com/docs/sdks/node
 
 ## Notes for AI Agents
 
@@ -737,6 +813,10 @@ The `plan.md` file helps structure feature development before implementation. Se
 - MCP servers enhance capabilities but require restart after configuration changes
 - This is a template project - structure will expand as more apps/packages are added
 - The API (`apps/api`) can connect to Supabase database using the client in `src/lib/supabase.ts`
+- **Resend email integration**: Use `apps/api/src/lib/resend.ts` for sending emails
+- For testing emails, use `onboarding@resend.dev` as the sender (works without domain verification)
+- For production emails, remind users to verify their domain at https://resend.com/domains
+- `RESEND_KEY` is required for email functionality - check with check-envs skill
 
 ### Git Hooks & Commit Guidelines
 
