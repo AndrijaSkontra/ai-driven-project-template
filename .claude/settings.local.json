@@ -25,9 +25,11 @@
       "Bash(bash -n:*)",
       "Bash(pwsh:*)",
       "Skill(check-envs)",
-      "Bash(supabase link:*)"
+      "Bash(supabase link:*)",
+      "Bash(claude mcp add:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": ["playwright", "supabase", "trigger"]
 }
