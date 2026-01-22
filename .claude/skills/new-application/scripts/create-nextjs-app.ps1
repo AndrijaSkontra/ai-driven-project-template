@@ -10,5 +10,5 @@ if ([string]::IsNullOrWhiteSpace($AppName)) {
   exit 1
 }
 
-npx create-next-app@latest $AppName --ts --eslint --tailwind --app --src-dir --import-alias "@/*" --use-bun --react-compiler
+npm create cloudflare@latest -- next-cloudflare2 --framework=next --deploy --git
 

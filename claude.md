@@ -5,7 +5,8 @@ This is an AI-driven application development template designed to work seamlessl
 **Technology Stack:**
 
 - **Runtime:** Bun (JavaScript runtime and package manager)
-- **Framework:** Hono v4 (Lightweight web framework)
+- **Backend Framework:** Hono v4 (Lightweight web framework for APIs)
+- **Frontend Framework:** Next.js (React framework for web applications)
 - **Deployment Platforms:**
   - Cloudflare Workers (API hosting)
   - Supabase Edge Functions (Serverless functions)
@@ -782,6 +783,7 @@ The `plan.md` file helps structure feature development before implementation. Se
 
 ## External Resources
 
+- **Next.js Documentation:** https://nextjs.org/docs
 - **Hono Documentation:** https://hono.dev
 - **Cloudflare Workers Docs:** https://developers.cloudflare.com/workers
 - **Wrangler CLI Reference:** https://developers.cloudflare.com/workers/wrangler
@@ -797,6 +799,16 @@ The `plan.md` file helps structure feature development before implementation. Se
 
 ## Notes for AI Agents
 
+### Framework Selection
+
+- **Next.js**: Use for frontend/web applications (user-facing UIs, dashboards, marketing sites, full-stack web apps)
+- **Hono**: Use for backend APIs and microservices (REST APIs, webhooks, lightweight edge functions)
+
+When creating a new web application, default to Next.js. When creating a new API or backend service, use Hono.
+
+### General Guidelines
+
+- When creating a new application in `/apps`, use the `new-application` skill (don’t hand-roll app scaffolding commands).
 - Always check for `.env` file before deployment operations
 - Use check-envs skill to verify environment configuration before deploying
 - Use available skills (dependencies, check-envs, deployment) when relevant for better user experience

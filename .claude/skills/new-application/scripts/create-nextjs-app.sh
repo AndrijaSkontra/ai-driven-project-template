@@ -1,2 +1,2 @@
-npx create-next-app@latest "$1" --ts --eslint --tailwind --app --src-dir --import-alias "@/*" --use-bun --react-compiler
+npm create cloudflare@latest -- next-cloudflare2 --framework=next --deploy --git
 
